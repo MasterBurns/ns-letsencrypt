@@ -4,5 +4,7 @@ Uses [dehydrated](https://github.com/lukas2511/dehydrated) to create and renew c
 
 
 Edit MasterBurns: for http-01 challenge
+
 If you get Error's that your Server is to slow check if youre firewall allows the acme Protokoll
+
 Also check if port 80 is open to your ADC
