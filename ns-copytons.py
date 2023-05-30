@@ -3,7 +3,7 @@
 #USE AT OWN RISK
 
 #Imports
-import json, requests, base64, sys, os, re
+import json, requests, base64, sys, os, re, time
 requests.packages.urllib3.disable_warnings()
 #imports variables used for script
 from mynsconfig import *
@@ -15,6 +15,11 @@ __maintainer__ = "Ryan Butler"
 
 #what to perform
 whattodo = sys.argv[1]
+
+#Color for Warning
+CRED = '\033[91m'
+CGREEN = '\33[92m'
+CEND = '\033[0m'
 
 def getAuthCookie(connectiontype,nitroNSIP,nitroUser,nitroPass):
    url = '%s://%s/nitro/v1/config/login' % (connectiontype, nitroNSIP)
@@ -40,6 +45,19 @@ def getAuthCookie(connectiontype,nitroNSIP,nitroUser,nitroPass):
    nitroCookie = 'NITRO_AUTH_TOKEN=%s' % cookie
    return nitroCookie 
    
+def getHANode(connectiontype,nitroNSIP):
+    HAstate = 'Primary'
+    url = '%s://%s/nitro/v1/stat/hanode' % (connectiontype, nitroNSIP)
+    headers = {'Content-type': 'application/json','Cookie': authToken}
+    payload = ""
+    response = requests.get(url, data=payload, headers=headers, verify=False)
+    Content = response.text
+    if Content.__contains__("Secondary"):
+        HAstate = "Secondary"
+    else:
+        print("First ADC is Primary")
+    return HAstate
+    
 def logOut(connectiontype,nitroNSIP,authToken):
    url = '%s://%s/nitro/v1/config/logout' % (connectiontype, nitroNSIP)
    headers = {'Content-type': 'application/vnd.com.citrix.netscaler.logout+json','Cookie': authToken}
@@ -218,6 +236,12 @@ def linkSSL(connectiontype,nitroNSIP,authToken, nschainname, nspairname):
    print("Link Netscaler CERTS: %s" % response.reason)
 
 authToken = getAuthCookie(connectiontype,nitroNSIP,nitroUser,nitroPass)
+secondary = getHANode(connectiontype,nitroNSIP)
+if secondary == "Secondary":
+    print(CRED + "!!!! First ADC in Config is Secondary. Changing to alternative ADC NSIP. !!!!" + CEND)
+    nitroNSIP = SecnitroNSIP
+    authToken = getAuthCookie(connectiontype,nitroNSIP,nitroUser,nitroPass)
+
 if whattodo == "save":
    localcert = sys.argv[2]
    localkey = sys.argv[3]
@@ -247,7 +271,7 @@ if whattodo == "save":
            createSSLCA(connectiontype,nitroNSIP,authToken, nschain, nschainname)
        linkSSL(connectiontype,nitroNSIP,authToken, nschainname, nspairname)
 elif whattodo == "test":
-   print("Connectivity To Netscaler OK")
+   print(CGREEN + "Connectivity To Netscaler OK" + CEND)
 elif whattodo == "challenge":
    token_filename = sys.argv[2]
    token_value = sys.argv[3]
@@ -265,7 +289,7 @@ elif whattodo == "challenge":
    elif viptype == "lb":
        BindrespPolLB(connectiontype,nitroNSIP,authToken,polname,nsvip,domaincount)  
    else:
-       print("Invalid VIP Type.  Check config")
+       print(CRED + "Invalid VIP Type.  Check config" + CEND)
        os.exit()
   
 elif whattodo == "clean":
@@ -278,11 +302,11 @@ elif whattodo == "clean":
    elif viptype == "lb":
        UnBindrespPolLB(connectiontype,nitroNSIP,authToken,polname,nsvip)  
    else:
-       sys.exit("Invalid VIP Type.  Check config")  
+       sys.exit(CRED + "Invalid VIP Type.  Check config" + CEND)  
    DeleterespPol(connectiontype,nitroNSIP,authToken,polname)
    DeleterespAct(connectiontype,nitroNSIP,authToken,actname)
 elif whattodo == "saveconfig":
-    print("Saving Netscaler Configuration")
+    print(CGREEN + "Saving Netscaler Configuration" + CEND)
     SaveNSConfig(connectiontype,nitroNSIP,authToken)
    
 logOut(connectiontype,nitroNSIP,authToken)
