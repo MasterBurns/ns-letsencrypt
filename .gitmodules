@@ -1,3 +1,5 @@
 [submodule "dehydrated"]
 	path = dehydrated
 	url = https://github.com/dehydrated-io/dehydrated
+[submodule "https://github.com/dehydrated-io/dehydrated/tree/e2eeaf7ec6932cdcea1e82b68630ac98a331f571"]
+	url = https://github.com/dehydrated-io/dehydrated/
